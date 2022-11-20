@@ -2,12 +2,16 @@ from googlesearch import search
 from urllib.request import urlopen
 import pandas as pd
 
-def find_url(name):
-    search_results = search(name+ " nhl.com", num_results = 20)
-    for a in search_results:
-        print(a)
+# find the url of a single player's official NHL page
+def find_url(name, num = 20):
+    search_results = search(name+ " site: nhl.com", num_results = num)
+    for website in search_results:
+        if "nhl.com/player" in website:
+            print(website)
+            break
     
-    
+
+# fetch the stats (GP, G, A, P) of a player given its official NHL website
 def stats_from_url(url):
     page = urlopen(url)
     html_bytes = page.read()
@@ -28,40 +32,46 @@ def stats_from_url(url):
             .split("</td>"))
     return data
 
-# retrieve players' names to search
-players = []
-
-done = False
-
-while not done:
-    x = input("Player: ")
-    if x.lower() == "d":
-        done = True
-    else:
-        players.append(x.title())
-
-# create dataframe
-N_list = [None]*len(players)
-
-
-cols = ["GP", "G", "A", "P"]
-df = pd.DataFrame(index = players, columns = cols)
-
-# search for the players' stats
-for i in range(0, len(players)):
-    search_results = search(players[i]+ " nhl", num_results = 20)
-    for website in search_results:
-        if "nhl.com/player" in website:
-            # retrieve stats
-            data = stats_from_url(website)
-            
-            # add data to dataframe
-            for j in range(0, 4):
-                df.at[players[i], cols[j]] = int(data[j])
-            break
+# retrieve list of players, fetch their stats, and build table to compare the players
+def run():
+    # retrieve players' names to search
+    players = []
     
-# rank players
-df = df.sort_values(by=["G", "A"], ascending=False)
+    n = 2
+    x = input("1st Player: ")
+    
+    while len(x) > 1:
+        players.append(x.title())
+        if n == 2:
+            x = input("2nd Player: ")
+        elif n == 3:
+            x = input("3rd Player: ")
+        else:
+            x = input(f"{n}th Player: ")
+        n += 1
 
-# display results
-print(df)
+    # create dataframe
+    N_list = [None]*len(players)
+
+
+    cols = ["GP", "G", "A", "P"]
+    df = pd.DataFrame(index = players, columns = cols)
+
+    # search for the players' stats
+    for i in range(0, len(players)):
+        search_results = search(players[i]+ " nhl", num_results = 20)
+        for website in search_results:
+            if "nhl.com/player" in website:
+                # retrieve stats
+                data = stats_from_url(website)
+                
+                # add data to dataframe
+                for j in range(0, 4):
+                    df.at[players[i], cols[j]] = int(data[j])
+                break
+        
+    # rank players
+    df = df.sort_values(by=["G", "A"], ascending=False)
+
+    # display results
+    print(df)
