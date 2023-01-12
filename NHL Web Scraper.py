@@ -2,17 +2,19 @@ from googlesearch import search
 from urllib.request import urlopen
 import pandas as pd
 
-# find the url of a single player's official NHL page
+# HELPER FUNCTIONS
+
+## find the url of a single player's official NHL page
 def find_url(name, num = 20):
     search_results = search(name+ " site: nhl.com", num_results = num)
     for website in search_results:
-        if "nhl.com/player" in website:
+        if "nhl.com/player/" in website:
             print(website)
             break
     
 
-# fetch the stats (GP, G, A, P) of a player given its official NHL website
-def stats_from_url(url):
+## fetch the stats (GP, G, A, P) of a player given its official NHL website
+def fetch(url):
     page = urlopen(url)
     html_bytes = page.read()
     html = html_bytes.decode("utf-8")
@@ -32,8 +34,29 @@ def stats_from_url(url):
             .split("</td>"))
     return data
 
-# retrieve list of players, fetch their stats, and build table to compare the players
-def run():
+## retrieve the data for a single player
+def single_query(num_results = 3):
+    x = input("Player: ")
+    n_rounds = 0
+    found = False
+    
+    while n_rounds * num_results <= 25 and not found:
+        search_results = search(x + " Stats and News | NHL.com", (n_rounds+1)*num_results)
+        for website in list(search_results)[n_rounds*num_results : (n_rounds+1)*num_results]:
+            if "nhl.com/player" in website:
+                found = True
+                # retrieve stats
+                info = fetch(website)                
+        n_rounds += 1
+    
+    cols = ["GP", "G", "A", "P"]
+    print(info[0:4])
+    df = pd.DataFrame(columns = cols)
+    df.loc[x.title()] = info[0:4]
+    print(df)
+
+## retrieve list of players, fetch their stats, and build table to compare the players
+def table_query(num_results = 3):
     # retrieve players' names to search
     players = []
     
@@ -59,19 +82,46 @@ def run():
 
     # search for the players' stats
     for i in range(0, len(players)):
-        search_results = search(players[i]+ " nhl", num_results = 20)
-        for website in search_results:
-            if "nhl.com/player" in website:
-                # retrieve stats
-                data = stats_from_url(website)
-                
-                # add data to dataframe
-                for j in range(0, 4):
-                    df.at[players[i], cols[j]] = int(data[j])
-                break
+        n_rounds = 0
+        found = False
+        
+        while n_rounds * num_results <= 25 and not found:
+            search_results = search(players[i]+ " Stats and News | NHL.com", (n_rounds+1)*num_results)
+            for website in list(search_results)[n_rounds*num_results : (n_rounds+1)*num_results]:
+                if "nhl.com/player" in website:
+                    found = True
+                    # retrieve stats
+                    data = fetch(website)
+                    
+                    # add data to dataframe
+                    for j in range(0, 4):
+                        df.at[players[i], cols[j]] = int(data[j])
+                    break
+            n_rounds += 1
         
     # rank players
     df = df.sort_values(by=["G", "A"], ascending=False)
 
     # display results
     print(df)
+
+## display a menu and execute the demand
+commands = {'COMMANDS': ["Full Query", "Single Query", "Exit"], 'CODE': ['f', 's', 'q']}
+opts = pd.DataFrame.from_dict(commands)
+opts.index += 1
+
+def menu():
+    print("\t  MENU\n", opts)
+    i = input("What would you like to do? ")
+    
+    while i != "q" and i != "3":
+        if i == "f" or i == "1":
+            table_query()
+        else:
+            single_query()
+        print("\n\n\t  MENU\n", opts)
+        i = input("\nWhat would you like to do? ")
+
+
+# MAIN
+menu()
