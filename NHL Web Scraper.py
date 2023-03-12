@@ -35,12 +35,12 @@ def fetch(url):
     return data
 
 ## retrieve the data for a single player
-def single_query(num_results = 3):
+def single_query(num_results = 1):
     x = input("Player: ")
     n_rounds = 0
     found = False
     
-    while n_rounds * num_results <= 25 and not found:
+    while n_rounds * num_results <= 10 and not found:
         search_results = search(x + " Stats and News | NHL.com", (n_rounds+1)*num_results)
         for website in list(search_results)[n_rounds*num_results : (n_rounds+1)*num_results]:
             if "nhl.com/player" in website:
@@ -50,13 +50,13 @@ def single_query(num_results = 3):
         n_rounds += 1
     
     cols = ["GP", "G", "A", "P"]
-    print(info[0:4])
+
     df = pd.DataFrame(columns = cols)
     df.loc[x.title()] = info[0:4]
     print(df)
 
 ## retrieve list of players, fetch their stats, and build table to compare the players
-def table_query(num_results = 3):
+def table_query(num_results = 1):
     # retrieve players' names to search
     players = []
     
@@ -65,12 +65,17 @@ def table_query(num_results = 3):
     
     while len(x) > 1:
         players.append(x.title())
-        if n == 2:
-            x = input("2nd Player: ")
-        elif n == 3:
-            x = input("3rd Player: ")
+        
+        if str(n)[-1] == "1" and ("0"+str(n))[-2] != "1":
+            suffix = "st"
+        elif str(n)[-1] == "2" and ("0"+str(n))[-2] != "1":
+            suffix = "nd"
+        elif str(n)[-1] == "3" and ("0"+str(n))[-2] != "1":
+            suffix = "rd"
         else:
-            x = input(f"{n}th Player: ")
+            suffix = "th"
+        
+        x = input(f"{n}{suffix} Player:")
         n += 1
 
     # create dataframe
@@ -85,18 +90,26 @@ def table_query(num_results = 3):
         n_rounds = 0
         found = False
         
-        while n_rounds * num_results <= 25 and not found:
+        while n_rounds * num_results <= 10 and not found:
+            
             search_results = search(players[i]+ " Stats and News | NHL.com", (n_rounds+1)*num_results)
-            for website in list(search_results)[n_rounds*num_results : (n_rounds+1)*num_results]:
-                if "nhl.com/player" in website:
-                    found = True
-                    # retrieve stats
-                    data = fetch(website)
-                    
-                    # add data to dataframe
-                    for j in range(0, 4):
-                        df.at[players[i], cols[j]] = int(data[j])
-                    break
+            
+            try:
+                for website in list(search_results)[n_rounds*num_results : (n_rounds+1)*num_results]:
+                    if "nhl.com/player" in website:
+                        found = True
+                        # retrieve stats
+                        data = fetch(website)
+                        
+                        # add data to dataframe
+                        for j in range(0, 4):
+                            df.at[players[i], cols[j]] = int(data[j])
+                        break
+            except:
+                df = df.sort_values(by=["G", "A"], ascending=False)
+                print(df)
+                print("\n*****Too many requests for url*****")
+                return
             n_rounds += 1
         
     # rank players
