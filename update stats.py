@@ -10,10 +10,6 @@ root = "https://statsapi.web.nhl.com"
 filename = "nhl_stats.xlsx"
 path = r"C:\Users\annie\Desktop\NHL Stats\nhl_stats.xlsx"
 
-book = load_workbook(path)
-writer = pd.ExcelWriter(path, engine = 'openpyxl', mode='a', if_sheet_exists="replace")
-writer.book = book
-
 p_df = pd.read_excel(filename, sheet_name='Players IDs', engine="openpyxl")
 #t_df = pd.read_excel(filename, sheet_name='Teams IDs', engine="openpyxl")
 
@@ -58,9 +54,14 @@ update_info = pd.DataFrame({'Player' : ["", timestamp]})
 s_df = s_df.append(update_info)
 
 
+# book = load_workbook(path)
+# writer = pd.ExcelWriter(path, engine = 'openpyxl', mode='a', if_sheet_exists="replace")
+# writer.book = book
+
+with pd.ExcelWriter(path, engine = 'openpyxl', mode='a', if_sheet_exists="replace") as writer:
 #t_df.to_excel(writer, sheet_name = 'Teams IDs', index = False)
 #p_df.to_excel(writer, sheet_name = 'Players IDs', index = False)
-s_df.to_excel(writer, sheet_name = 'Stats', index = False)
+    s_df.to_excel(writer, sheet_name = 'Stats', index = False)
 
 # quit
-writer.close()
+#writer.close()
