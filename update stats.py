@@ -1,19 +1,38 @@
 import pandas as pd
 import numpy as np
+import math
+import sys
 from urllib.request import urlopen
+from openpyxl import load_workbook
+from datetime import datetime
 
 root = "https://statsapi.web.nhl.com"
-filename = 'reference_ids.xlsx'
+filename = "nhl_stats.xlsx"
+path = r"C:\Users\annie\Desktop\NHL Stats\nhl_stats.xlsx"
+
+book = load_workbook(path)
+writer = pd.ExcelWriter(path, engine = 'openpyxl', mode='a', if_sheet_exists="replace")
+writer.book = book
 
 p_df = pd.read_excel(filename, sheet_name='Players IDs', engine="openpyxl")
-t_df = pd.read_excel(filename, sheet_name='Teams IDs', engine="openpyxl")
+#t_df = pd.read_excel(filename, sheet_name='Teams IDs', engine="openpyxl")
+
+s_df = p_df.copy(deep=True)
+s_df = s_df.drop(columns=['ID', 'Link'])
+s_df['GP'] = None
+s_df['G'] = None
+s_df['A'] = None
+s_df['P'] = None
 
 # get player stats
 i = 1
 
 
 for i in range(0, len(p_df)):
-    if p_df.iat[i, 3] == "G":
+    print("Processing i = ", i, ": ", p_df.iat[i, 0], end="\r")
+    
+    # ignore goalies
+    if p_df.iat[i, 1] == "G":
         continue
     
     player_url = root+p_df.iat[i, 2]+ "/stats?stats=statsSingleSeason&season=20222023"
@@ -27,15 +46,21 @@ for i in range(0, len(p_df)):
     if p_info[13] == '}':
         continue
     
-    p_df.iat[i, 4] = p_info[19][-3:-1].strip()
-    p_df.iat[i, 5] = p_info[16][-3:-1].strip()
-    p_df.iat[i, 6] = p_info[15][-3:-1].strip()
-    p_df.iat[i, 7] = p_info[35][-4:-1].strip().strip(":")
+    s_df.iat[i, 2] = p_info[19][-3:-1].strip()
+    s_df.iat[i, 3] = p_info[16][-3:-1].strip()
+    s_df.iat[i, 4] = p_info[15][-3:-1].strip()
+    s_df.iat[i, 5] = p_info[35][-4:-1].strip().strip(":")
+
+# add timestamp to the update
+now = str(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+timestamp = "Last updated: " + now
+update_info = pd.DataFrame({'Player' : ["", timestamp]})
+s_df = s_df.append(update_info)
 
 
-writer = pd.ExcelWriter(filename, engine = 'xlsxwriter')
-t_df.to_excel(writer, sheet_name = 'Teams IDs', index = False)
-p_df.to_excel(writer, sheet_name = 'Players IDs', index = False)
+#t_df.to_excel(writer, sheet_name = 'Teams IDs', index = False)
+#p_df.to_excel(writer, sheet_name = 'Players IDs', index = False)
+s_df.to_excel(writer, sheet_name = 'Stats', index = False)
 
 # quit
 writer.close()

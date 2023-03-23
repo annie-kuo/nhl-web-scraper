@@ -1,9 +1,10 @@
 import pandas as pd
 import numpy as np
 from urllib.request import urlopen
+from unidecode import unidecode
 
 root = "https://statsapi.web.nhl.com"
-path = "reference_ids.xlsx"
+path = "nhl_stats.xlsx"
 writer = pd.ExcelWriter(path, engine = 'xlsxwriter')
 
 
@@ -51,7 +52,7 @@ t_df.to_excel(writer, sheet_name = 'Teams IDs', index = False)
 
 
 # PLAYERS
-p_cols = ["Player", "ID", "Link", "Position", "GP", "G", "A", "P"]
+p_cols = ["Player", "ID", "Link", "Position"]
 p_df = pd.DataFrame(columns = p_cols)
 
 # get players' ids
@@ -74,7 +75,7 @@ while i < len(t_df):
     while j+2 < len(r_info):     
         # retrieve info
         p_id = r_info[j][-9:-1].strip()
-        p_name = r_info[j+1][20:-2]
+        p_name = unidecode(r_info[j+1][20:-2])
         p_link = r_info[j+2][16:-1]
         p_pos = r_info[j+9][-3:-1].strip("\"")
     
