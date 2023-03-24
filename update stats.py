@@ -22,10 +22,12 @@ s_df['P'] = None
 
 # get player stats
 i = 1
-
+LINE_CLEAR = '\x1b[2K'
 
 for i in range(0, len(p_df)):
+    print(end=LINE_CLEAR)
     print("Processing i = ", i, ": ", p_df.iat[i, 0], end="\r")
+
     
     # ignore goalies
     if p_df.iat[i, 1] == "G":
@@ -64,4 +66,6 @@ with pd.ExcelWriter(path, engine = 'openpyxl', mode='a', if_sheet_exists="replac
     s_df.to_excel(writer, sheet_name = 'Stats', index = False)
 
 # quit
+print(end=LINE_CLEAR)
+print("Done updating")
 #writer.close()
